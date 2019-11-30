@@ -1,5 +1,11 @@
 package lab_files;
 
+import static java.lang.Thread.sleep;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class ProducerConsumer{
 
     public static void main(String[] args) {
@@ -9,40 +15,58 @@ public class ProducerConsumer{
         Producer p1 = new Producer(b, 1);
         Consumer c1 = new Consumer(b, 1);
         Consumer c2 = new Consumer(b, 2);
+        Consumer c3 = new Consumer(b, 3);
+        Consumer c4 = new Consumer(b, 4);
+        Consumer c5 = new Consumer(b, 5);
+        Consumer c6 = new Consumer(b, 6);
        
-        c2.start();
+        
         c1.start();
+        c2.start();
+        c3.start();
+        c4.start();
+        c5.start();
+        c6.start();
+        
         p1.start();
         
     }
 }   
 
 class MyBuffer {
-    private int contents;
+    private int contents, contCli = 0;
     private boolean available = false;
-
-    public synchronized int get(int who) {
+    Queue<int> fila = new LinkedList<int>();
+    
+    public synchronized int get(Consumer c) {
+        contCli++;
+        System.out.format("Consumer %d waiting \n", c.getNumber());
         while (available == false) {
             try {
                 wait();  //this.wait()
             } catch (InterruptedException e) { }
         }
         available = false;
-        System.out.format("Consumer %d got: %d%n", who, contents);
+        System.out.format("consumer %d \n", c.getNumber());
         //notifyAll();
         notify();
+        contCli--;
         return contents;
     }
     public synchronized void put(int who, int value) {
-        while (available == true) {
-            try {
-                wait();  //this.wait()
-            } catch (InterruptedException e) { }
+        while(contCli > 0){
+            while (available == true) {
+                try {
+                    wait();  //this.wait()
+                } catch (InterruptedException e) { }
+            }
+            contents = value;
+            available = true;
+            System.out.format("Producer %d check ", who, contents);
+            
+            notifyAll();
         }
-        contents = value;
-        available = true;
-        System.out.format("Producer %d put: %d%n", who, contents);
-        notifyAll();
+        
     }
 }
 
@@ -55,14 +79,18 @@ class Producer extends Thread {
         buffer = b;
         this.number = number;
     }
+    
+    
 
     public void run() {
-        for (int i = 0; i < 10; i++) {
-            buffer.put(number, i);
-            try {
-                sleep((int)(Math.random() * 100));
-            } catch (InterruptedException e) { }
-        }
+//        for (int i = 0; i < 10; i++) {
+//            buffer.put(number, i);
+//            try {
+//                sleep((int)(Math.random() * 100));
+//            } catch (InterruptedException e) { }
+//        }
+        
+        buffer.put(number, number);
     }
 }
 
@@ -75,11 +103,13 @@ class Consumer extends Thread {
         buffer = b;
         this.number = number;
     }
-
+    
+    public int getNumber(){
+        return number;
+    }
+    
     public void run() {
         int value = 0;
-        for (int i = 0; i < 10; i++) {
-            value = buffer.get(number);
-        }
+        value = buffer.get(this);
     }
 }   
