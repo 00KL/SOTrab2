@@ -12,23 +12,29 @@ public class ProducerConsumer{
 
     public static void main(String[] args) throws InterruptedException {
        
-        int num_barbeiros, num_cadeiras, total_clientes; //acho q isso vai virar atributo do monitor e n mais variavel na maind
+        int num_barbeiros = 2, num_cadeiras = 3, total_clientes = 6; //acho q isso vai virar atributo do monitor e n mais variavel na maind
 	Scanner leitor = new Scanner(System.in); 
                 
-        System.out.println("Quantos barbeiros? ");
-        num_barbeiros = leitor.nextInt();
-        System.out.println("Quantas cadeiras? ");
-        num_cadeiras = leitor.nextInt();
-        System.out.println("Quantos clientes? ");
-        total_clientes = leitor.nextInt();
+        //System.out.println("Quantos barbeiros? ");
+        //num_barbeiros = leitor.nextInt();
+        //System.out.println("Quantas cadeiras? ");
+        //num_cadeiras = leitor.nextInt();
+        //System.out.println("Quantos clientes? ");
+        //total_clientes = leitor.nextInt();
         
         MyBuffer b = new MyBuffer(num_cadeiras);
         
         Producer p1 = new Producer(b, 1);      
         p1.start();
         
-        Consumer[] vetCli = new Consumer[total_clientes];
-        for(int i = 0; i < total_clientes; i++){
+        Producer[] vetBar = new Producer[total_clientes+1];
+        for(int i = 1; i <= num_barbeiros; i++){
+            vetBar[i] = new Producer(b,i);
+            vetBar[i].start();
+        }
+        
+        Consumer[] vetCli = new Consumer[total_clientes+1];
+        for(int i = 1; i <= total_clientes; i++){
             vetCli[i] = new Consumer(b,i);
             vetCli[i].start();
         }
@@ -57,7 +63,7 @@ class MyBuffer {
                 System.out.format("Cliente %d esperando corte...\n", c.getNumber());
                 break;
             }
-            sleep(3000);
+            sleep(300);
         }
             
         notifyAll();
@@ -108,7 +114,7 @@ class MyBuffer {
                 Consumer a = fila.poll();
                 if(a == null) continue;
                 a.setValid(true);
-                System.out.format("Cliente %d cortando cabelo com Barbeiro %d\n", a.getNumber(), p.getNumber());
+                System.out.format("Cliente %d cortando cabelo com Barbeiro %d///////%d\n", a.getNumber(), p.getNumber(), a.getNumber());
                 notifyAll();
               }
           }
