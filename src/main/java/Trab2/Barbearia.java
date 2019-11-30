@@ -6,9 +6,10 @@ import Trab2.Barbeiro;
 public class Barbearia { //acho q barbearia tem q virar um monitor, ai as classes ficam chamando cada metodo dentro do monitor(q vao ser sincronizados)
 
 	public static void main(String[] args) {
-		int num_barbeiros = Integer.parseInt(args[0]); //acho q isso vai virar atributo do monitor e n mais variavel na maind
-		int num_cadeiras = Integer.parseInt(args[1]);
-		int total_clientes = Integer.parseInt(args[2]);
+		int num_barbeiros, num_cadeiras, total_clientes; //acho q isso vai virar atributo do monitor e n mais variavel na maind
+		                
+                System.out.println("Quantos barbeiros? ");
+                
 
 		Barbeiro roberval = new Barbeiro(10);
 		Cliente regata = new Cliente(20);
