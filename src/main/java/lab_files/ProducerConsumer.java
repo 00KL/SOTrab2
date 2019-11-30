@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 
 public class ProducerConsumer{
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
        
         MyBuffer b = new MyBuffer();
        
@@ -18,16 +18,14 @@ public class ProducerConsumer{
         Consumer c3 = new Consumer(b, 3);
         Consumer c4 = new Consumer(b, 4);
         Consumer c5 = new Consumer(b, 5);
-        Consumer c6 = new Consumer(b, 6);
-       
-        
+        Consumer c6 = new Consumer(b, 6);       
         c1.start();
         c2.start();
         c3.start();
         c4.start();
         c5.start();
         c6.start();
-        
+        sleep(5000);    
         p1.start();
         
     }
@@ -38,37 +36,54 @@ class MyBuffer {
     private boolean available = false;
     Queue<Consumer> fila = new LinkedList<Consumer>();
     
+    
+    
     public synchronized int get(Consumer c) {
         contCli++;
         fila.add(c);
+        c.setValid(false);
         System.out.format("Consumer %d waiting \n", c.getNumber());
-        while (available == false) {
+        while(c.getValid()){
             try {
                 wait();  //this.wait()
             } catch (InterruptedException e) { }
         }
-        available = false;
+        
         System.out.format("consumer %d \n", c.getNumber());
+        
         //notifyAll();
-        notify();
+        //notify();
+        
         contCli--;
         return contents;
     }
-    public synchronized void put(int who, int value) {
-        while(contCli > 1){
-            while (available == true) {
-                try {
-                    wait();  //this.wait()
-                } catch (InterruptedException e) { }
-            }
-            contents = value;
-            available = true;
-            System.out.format("Producer %d check ", who, contents);
-            Consumer test = fila.poll();
-            test.notify();
-            //notifyAll();
-        }
-        
+    public synchronized void put(int who, int value) throws InterruptedException {
+//        System.out.format("test\n");
+//        while(contCli > 1){
+//            while (available == true) {
+//                try {
+//                    wait();  //this.wait()
+//                } catch (InterruptedException e) { }
+//            }
+//            contents = value;
+//            available = true;
+//            System.out.format("Producer %d check ", who, contents);
+//            //Consumer test = fila.poll();
+//            //ystem.out.println(test.getNumber());
+//            //test.notify();
+//            notifyAll();
+//        }
+          System.out.println("Vamo mano namoral");
+          for(int i = 0; i<6; i++){
+              synchronized(fila){
+                Consumer a = fila.poll();
+                System.out.println(a.getNumber());
+                a.setValid(true);
+                notifyAll();
+              }
+              
+              //sleep(50);
+          }
     }
 }
 
@@ -100,6 +115,15 @@ class Consumer extends Thread {
 
     private MyBuffer buffer;
     private int number;
+    private boolean valid;
+    
+    public void setValid(boolean b){
+       valid = b;
+    }
+    
+    public boolean getValid(){
+        return valid;
+    }
 
     public Consumer(MyBuffer b, int number) {
         buffer = b;
