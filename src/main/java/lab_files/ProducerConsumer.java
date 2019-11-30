@@ -36,10 +36,11 @@ public class ProducerConsumer{
 class MyBuffer {
     private int contents, contCli = 0;
     private boolean available = false;
-    Queue<int> fila = new LinkedList<int>();
+    Queue<Consumer> fila = new LinkedList<Consumer>();
     
     public synchronized int get(Consumer c) {
         contCli++;
+        fila.add(c);
         System.out.format("Consumer %d waiting \n", c.getNumber());
         while (available == false) {
             try {
@@ -54,7 +55,7 @@ class MyBuffer {
         return contents;
     }
     public synchronized void put(int who, int value) {
-        while(contCli > 0){
+        while(contCli > 1){
             while (available == true) {
                 try {
                     wait();  //this.wait()
@@ -63,8 +64,9 @@ class MyBuffer {
             contents = value;
             available = true;
             System.out.format("Producer %d check ", who, contents);
-            
-            notifyAll();
+            Consumer test = fila.poll();
+            test.notify();
+            //notifyAll();
         }
         
     }
