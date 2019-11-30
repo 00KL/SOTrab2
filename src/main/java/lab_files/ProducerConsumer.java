@@ -3,6 +3,8 @@ package lab_files;
 import static java.lang.Thread.sleep;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Scanner;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -10,58 +12,76 @@ public class ProducerConsumer{
 
     public static void main(String[] args) throws InterruptedException {
        
-        MyBuffer b = new MyBuffer();
-       
-        Producer p1 = new Producer(b, 1);
-        Consumer c1 = new Consumer(b, 1);
-        Consumer c2 = new Consumer(b, 2);
-        Consumer c3 = new Consumer(b, 3);
-        Consumer c4 = new Consumer(b, 4);
-        Consumer c5 = new Consumer(b, 5);
-        Consumer c6 = new Consumer(b, 6);       
-        c1.start();
-        c2.start();
-        c3.start();
-        c4.start();
-        c5.start();
-        c6.start();
-        sleep(5000);    
+        int num_barbeiros, num_cadeiras, total_clientes; //acho q isso vai virar atributo do monitor e n mais variavel na maind
+	Scanner leitor = new Scanner(System.in); 
+                
+        System.out.println("Quantos barbeiros? ");
+        num_barbeiros = leitor.nextInt();
+        System.out.println("Quantas cadeiras? ");
+        num_cadeiras = leitor.nextInt();
+        System.out.println("Quantos clientes? ");
+        total_clientes = leitor.nextInt();
+        
+        MyBuffer b = new MyBuffer(num_cadeiras);
+        
+        Producer p1 = new Producer(b, 1);      
         p1.start();
+        
+        Consumer[] vetCli = new Consumer[total_clientes];
+        for(int i = 0; i < total_clientes; i++){
+            vetCli[i] = new Consumer(b,i);
+            vetCli[i].start();
+        }
+        
+        
         
     }
 }   
 
 class MyBuffer {
-    private int contents, contCli = 0;
+    private int contents;
     private boolean available = false;
     Queue<Consumer> fila = new LinkedList<Consumer>();
+    int num_cadeiras;
     
+    public MyBuffer(int num_cadeiras){
+        this.num_cadeiras = num_cadeiras;
+    }
     
-    
-    public synchronized int get(Consumer c) {
-        contCli++;
+    public synchronized int get(Consumer c) throws InterruptedException {
+        while(true){
+            if(fila.size() == num_cadeiras){
+                System.out.format("Cliente %d tentou entrar na barbearia, mas está lotada... indo dar uma voltinha\n", c.getNumber());
+                notifyAll();
+            }else{
+                System.out.format("Cliente %d esperando corte...\n", c.getNumber());
+                break;
+            }
+            sleep(3000);
+        }
+            
+        notifyAll();
         fila.add(c);
         c.setValid(false);
-        System.out.format("Consumer %d waiting \n", c.getNumber());
-        while(c.getValid()){
+        //System.out.format("Consumer %d waiting \n", c.getNumber());
+        while(!c.getValid()){
             try {
                 wait();  //this.wait()
             } catch (InterruptedException e) { }
         }
         
-        System.out.format("consumer %d \n", c.getNumber());
+        System.out.format("Cliente %d terminou o corte...saindo da barbearia!\n", c.getNumber());
         
         //notifyAll();
         //notify();
-        
-        contCli--;
         return contents;
     }
-    public synchronized void put(int who, int value) throws InterruptedException {
+    
+    public synchronized void put(Producer p) throws InterruptedException {
 //        System.out.format("test\n");
 //        while(contCli > 1){
 //            while (available == true) {
-//                try {
+//                tr1y {
 //                    wait();  //this.wait()
 //                } catch (InterruptedException e) { }
 //            }
@@ -73,18 +93,27 @@ class MyBuffer {
 //            //test.notify();
 //            notifyAll();
 //        }
-          System.out.println("Vamo mano namoral");
-          for(int i = 0; i<6; i++){
+//          “Barbeiro Y indo dormir um pouco... não há clientes na barbearia...”
+//◦           “Barbeiro Y acordou! Começando os trabalhos!”
+
+          //System.out.println("Vamo mano namoral");
+          //System.out.println("cade/n");
+          while(true){
+              if(fila.isEmpty()){
+                  System.out.format("Barbeiro %d indo dormir um pouco... não há clientes na barbearia...\n", p.getNumber());
+                  wait();
+              }
+              System.out.format("Barbeiro %d acordou! Começando os trabalhos!\n", p.getNumber());
               synchronized(fila){
                 Consumer a = fila.poll();
-                System.out.println(a.getNumber());
+                if(a == null) continue;
                 a.setValid(true);
+                System.out.format("Cliente %d cortando cabelo com Barbeiro %d\n", a.getNumber(), p.getNumber());
                 notifyAll();
               }
-              
-              //sleep(50);
           }
     }
+    
 }
 
 class Producer extends Thread {
@@ -97,18 +126,24 @@ class Producer extends Thread {
         this.number = number;
     }
     
-    
+    public int getNumber(){
+        return number;
+    }
 
     public void run() {
-//        for (int i = 0; i < 10; i++) {
+        try {
+            //        for (int i = 0; i < 10; i++) {
 //            buffer.put(number, i);
 //            try {
 //                sleep((int)(Math.random() * 100));
 //            } catch (InterruptedException e) { }
 //        }
-        
-        buffer.put(number, number);
-    }
+
+    buffer.put(this);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Producer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
 }
 
 class Consumer extends Thread {
